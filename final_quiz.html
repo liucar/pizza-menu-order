@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+  <head>
+    <title>Final Quiz</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bungee+Hairline&display=swap" rel="stylesheet">
+    <link type="text/css" href="pizzeria_styling.css" rel="stylesheet"></link>
+
+    <script>
+      const $ = selector => document.querySelector(selector);
+
+      var getJSON = function(url, callback) {
+          var xhr = new XMLHttpRequest();
+          xhr.open('get', url, true);
+          xhr.responseType = 'json';
+          xhr.onload = function() {
+            var status = xhr.status;
+            if (status == 200) {
+              callback(null, xhr.response);
+            } else {
+              callback(status);
+            }
+          };
+          xhr.send();
+      };
+
+      getJSON('https://mm214.com/menu.php', function(err, data) {
+        if (err != null) {
+          alert('Something went wrong: ' + err);
+        } else {
+
+          let menu = data.menu;
+
+          for (i in menu) {
+
+              // Top level category: Slice of pizza
+              if (typeof menu[i] !== 'object') {
+                $("h2#pizza").innerHTML += i + " $" + menu[i] + "<input type='number' name='pizza slice' value='0' data-price='" + menu[i] + "' min='0'></input>";
+              }
+
+              // Loop thru toppings
+              if (i == "toppings") {
+                // Toppings label
+                $("h3#toppings").innerHTML += i;
+
+                for (j in menu[i]) {
+                  $(".toppings_wrap").innerHTML += "<div class='toppings_listing'>" + j + " $" + menu[i][j] + "<input type='number' data-price='" + menu[i][j] + "' name='" + j +"' value='0' min='0'></input>" + "</div>";
+                }
+              }
+
+              // Loop thru sides
+              if (i == "sides") {
+                // Top level Sides label
+                $("h2#sides").innerHTML += i;
+
+                for (j in menu[i]) {
+                  $("#sides + .card_body_copy").innerHTML += "<div class='sides_listing'>" + j + " $" + menu[i][j] + "<input type='number' data-price='" + menu[i][j] + "' name='" + j +"' value='0' min='0'></input>" + "</div>";
+                }
+              }
+
+              // Loop thru drinks
+              if (i == "drinks") {
+                // Top level Drinks label
+                $("h2#drinks").innerHTML += i;
+
+                for (j in menu[i]) {
+                    if (j == "soda") {
+                        // Soda label
+                        $("h2#drinks + .card_body_copy").innerHTML += "<div id='soda'>" + j + "</div>";
+
+                        // Loop thru soda sizes
+                        for (k in menu[i][j]) {
+                          $("h2#drinks + .card_body_copy").innerHTML += "<div class='soda_listing'>" + k + " $" + menu[i][j][k] + "<input type='number' name='" + k +" soda' value='0' data-price='" + menu[i][j][k] + "'' min='0'></input>" + "</div>";
+                        }
+
+                    } else {
+                        $("#drinks + .card_body_copy").innerHTML += "<div class='drink_listing'>" + j + " $" + menu[i][j] + "<input type='number' data-price='" + menu[i][j] + "'' name='" + j +"' value='0' min='0'></input>" + "</div>";
+                    }
+                  
+                }
+              } // End drinks
+
+          } // End menu loop
+
+        }
+      });
+
+
+      
+      document.addEventListener("DOMContentLoaded", () => {
+
+          // SAVE ORDER: click event handler
+          // Stores order in localStorage
+          $("button.save_order").addEventListener("click", () => { 
+              const order = document.forms[0];
+              let data_to_store = [];
+              for (let i = 0; i < order.length; i++) {
+                let name = order.elements[i].name;
+                let value = order.elements[i].value;
+                let price = order.elements[i].dataset.price;
+
+                // Add to order, if qty is over 0
+                if (value > 0) {
+                  data_to_store.push({food: name, qty: value, price: price});
+                }
+              }
+              localStorage.setItem("your_order", JSON.stringify(data_to_store));
+           })
+
+          // VIEW ORDER: click event handler
+          // Toggles view order popup
+          // Shows your order from localStorage
+          const all_btns = document.querySelectorAll("button.view_order");
+          for (btn of all_btns) {
+            btn.addEventListener("click", () => { 
+              $(".interstitial").classList.toggle("active");
+              let content = "";
+              const items_array = JSON.parse(localStorage.getItem("your_order"));
+              let total_price = 0;
+              if (items_array.length == 0) {
+                content += "Nothing ordered yet!"
+              } else {
+                for (let i = 0; i < items_array.length; i++) {
+                  const item = items_array[i];
+                  content += "<div class='order_listing'>" + item.food + " x " + item.qty + " <span class='price'>$" + (item.price * item.qty).toFixed(2) + "</span></div>";
+                  total_price += (item.price * item.qty);
+                }
+                content += "<br><hr/><br>total: <span class='price'>$" + total_price.toFixed(2) + "</span>";
+              }
+              $(".order_display").innerHTML = content;
+            })
+          }
+
+      });
+
+    </script>
+
+  </head>
+  <body>
+    <h1>&#9787; Pizzeria Emoji &#9787;</h1>
+
+    <form class="two_col">
+      <!--CARD 1 : PIZZA-->
+      <div class="menu_card">
+          <div class="card_top">
+            🍕
+          </div>
+          <div class="card_bottom">
+            <h2 class="category_label" id="pizza"></h2>
+            <div class="card_body_copy">
+              A slice of cheese pizza with the option to add additional toppings.
+              <div class="toppings_wrap">
+                <h3 id="toppings"></h3>
+              </div>
+            </div>
+          </div>
+      </div>
+
+      <div class="side_stack">
+        <!--CARD 2 : SIDES-->
+        <div class="menu_card">
+          <h2 class="category_label" id="sides">🥗&nbsp;</h2>
+          <div class="card_body_copy"></div>
+        </div>
+
+        <!--CARD 3 : DRINKS-->
+        <div class="menu_card">
+          <h2 class="category_label" id="drinks">🥤&nbsp;</h2>
+          <div class="card_body_copy"></div>
+        </div>
+      </div> 
+    </form>
+
+    <!--BUTTONS-->
+    <div class="button_wrap">
+      <button class="save_order">Save order</button>
+      <button class="view_order">View order</button>
+    </div>
+
+    <!--POPUP: YOUR ORDER-->
+    <div class="interstitial">
+      <div class="order_popup">
+      
+        <h4>&#x1F9FE; Your order</h4>
+        <div class="order_display"></div>
+        <button class="view_order">Back to the menu, please</button>
+
+      </div>
+    </div>
+   
+  </body>
+</html>
